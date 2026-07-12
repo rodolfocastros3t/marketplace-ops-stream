@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ops Stream — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --ink: #0a1f14;
+        --soft: #3a5548;
+        --panel: rgba(255, 255, 255, 0.92);
+        --line: rgba(0, 39, 118, 0.14);
+        --brand: #009b3a;
+        --pine: #006b2e;
+        --gold: #e6b800;
+        --sky: #002776;
+        --clay: #b42318;
+        --cream: #f3faf5;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse 70% 45% at 8% -5%, rgba(0, 155, 58, 0.18), transparent 55%),
+          radial-gradient(ellipse 55% 40% at 100% 0%, rgba(0, 39, 118, 0.12), transparent 50%),
+          radial-gradient(ellipse 50% 35% at 70% 100%, rgba(230, 184, 0, 0.14), transparent 55%),
+          linear-gradient(165deg, #f5fbf7, #eef4f8 48%, #f7f5ea);
+        min-height: 100vh;
+      }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+      h1 {
+        font-family: "Fraunces", Georgia, serif;
+        font-size: clamp(2rem, 5vw, 3rem);
+        margin: 0;
+        line-height: 1;
+      }
+      h1 .ops { color: var(--pine); }
+      h1 .dot { color: var(--gold); margin: 0 0.35rem; }
+      h1 .stream { color: var(--sky); }
+      .rail {
+        width: 9.5rem; height: 3px; margin-top: 0.7rem;
+        background: linear-gradient(90deg, #009b3a 0 34%, #e6b800 34% 66%, #002776 66% 100%);
+      }
+      .sub { color: var(--soft); margin: 0.75rem 0 0; }
+      .top {
+        display: flex; flex-wrap: wrap; justify-content: space-between;
+        gap: 1rem; align-items: flex-end; border-bottom: 1px solid var(--line);
+        padding-bottom: 1.1rem; margin-bottom: 1.1rem;
+      }
+      .pill {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        border: 1px solid rgba(0, 39, 118, 0.25); background: var(--panel);
+        padding: 0.4rem 0.75rem; font-size: 0.9rem; color: var(--sky);
+      }
+      .dot-live {
+        width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--brand);
+        box-shadow: 0 0 0 0 rgba(0, 155, 58, 0.4);
+        animation: pulse 2s infinite;
+      }
+      .dot-live.off { background: var(--clay); animation: none; }
+      @keyframes pulse {
+        50% { box-shadow: 0 0 0 8px rgba(0, 155, 58, 0); }
+      }
+      .kpis {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem;
+      }
+      @media (min-width: 900px) {
+        .kpis { grid-template-columns: repeat(6, 1fr); }
+      }
+      .kpi, .panel {
+        background: var(--panel); border: 1px solid var(--line);
+        box-shadow: 0 14px 30px rgba(10, 31, 20, 0.07); padding: 0.9rem 1rem;
+      }
+      .kpi span {
+        display: block; font-size: 0.72rem; text-transform: uppercase;
+        letter-spacing: 0.04em; color: var(--soft); font-weight: 500;
+      }
+      .kpi strong { display: block; margin-top: 0.35rem; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+      .kpi.accent strong { color: var(--clay); }
+      .grid { display: grid; gap: 1rem; }
+      @media (min-width: 900px) {
+        .grid.two { grid-template-columns: 1.2fr 0.8fr; }
+      }
+      .panel h2 {
+        font-family: "Fraunces", Georgia, serif; font-size: 1.25rem; margin: 0 0 0.35rem;
+      }
+      .muted { color: var(--soft); font-size: 0.9rem; margin: 0 0 0.85rem; }
+      .lanes {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem;
+      }
+      @media (min-width: 900px) {
+        .lanes { grid-template-columns: repeat(6, 1fr); }
+      }
+      .lane { border: 1px solid var(--line); background: rgba(0, 155, 58, 0.04); padding: 0.45rem; min-height: 7rem; }
+      .lane h3 {
+        margin: 0 0 0.4rem; font-size: 0.65rem; text-transform: uppercase;
+        color: var(--soft); display: flex; justify-content: space-between;
+      }
+      .lane h3 em {
+        font-style: normal; background: rgba(0, 39, 118, 0.1); color: var(--sky);
+        padding: 0.1rem 0.35rem;
+      }
+      .card {
+        background: #fff; border: 1px solid var(--line); padding: 0.4rem 0.45rem; margin-bottom: 0.35rem;
+      }
+      .card b { display: block; font-size: 0.82rem; }
+      .card small { color: var(--soft); font-size: 0.68rem; }
+      .alerts { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow: auto; }
+      .alerts li {
+        border-left: 3px solid var(--brand); background: rgba(255,255,255,0.7);
+        padding: 0.55rem 0.7rem; margin-bottom: 0.45rem;
+      }
+      .alerts li.CRITICO { border-left-color: var(--clay); }
+      .alerts li.ATENCAO { border-left-color: var(--gold); }
+      .alerts li.INFO { border-left-color: var(--sky); }
+      .alerts strong { display: block; font-size: 0.9rem; }
+      .alerts p { margin: 0.25rem 0 0; font-size: 0.85rem; }
+      .chart-box { height: 180px; }
+      .note {
+        margin-top: 1rem; font-size: 0.8rem; color: var(--soft);
+        border: 1px dashed var(--line); padding: 0.75rem;
+      }
+      a { color: var(--sky); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <h1><span class="ops">Ops</span><span class="dot">·</span><span class="stream">Stream</span></h1>
+          <div class="rail" aria-hidden="true"></div>
+          <p class="sub">Marketplace brasileiro em tempo real — operação ao vivo nesta URL</p>
+        </div>
+        <span class="pill" id="status">
+          <span class="dot-live off" id="liveDot"></span>
+          <span id="liveText">Conectando…</span>
+        </span>
+      </header>
+
+      <section class="kpis" aria-label="KPIs">
+        <article class="kpi"><span>GMV</span><strong id="k-gmv">—</strong></article>
+        <article class="kpi"><span>Pedidos / min</span><strong id="k-ppm">—</strong></article>
+        <article class="kpi"><span>Ticket médio</span><strong id="k-ticket">—</strong></article>
+        <article class="kpi"><span>% PIX</span><strong id="k-pix">—</strong></article>
+        <article class="kpi"><span>% Live</span><strong id="k-live">—</strong></article>
+        <article class="kpi accent"><span>Alertas críticos</span><strong id="k-crit">—</strong></article>
+      </section>
+
+      <div class="grid two">
+        <section class="panel">
+          <h2>Kanban de pedidos</h2>
+          <p class="muted">Ciclo de vida atualizado via WebSocket</p>
+          <div class="lanes" id="kanban"></div>
+        </section>
+        <aside class="panel">
+          <h2>Mix PIX</h2>
+          <p class="muted">Verde = PIX · Azul = outros</p>
+          <div class="chart-box"><canvas id="payChart"></canvas></div>
+        </aside>
+      </div>
+
+      <div class="grid two" style="margin-top: 1rem">
+        <section class="panel">
+          <h2>Alertas roteados</h2>
+          <p class="muted">Regras → fraude / logística / marketing / operações</p>
+          <ul class="alerts" id="alerts"></ul>
+        </section>
+        <section class="panel">
+          <h2>Live commerce</h2>
+          <p class="muted" id="liveBox">Aguardando live…</p>
+          <h2 style="margin-top: 1rem">Carga dos hubs</h2>
+          <div class="chart-box"><canvas id="hubChart"></canvas></div>
+        </section>
+      </div>
+
+      <p class="note">
+        API: <a href="/health">/health</a> ·
+        <a href="/api/v1/kpis">/api/v1/kpis</a> ·
+        WebSocket <code>/ws</code>.
+        Free Render pode demorar ~1 min na 1ª abertura após idle.
+      </p>
+    </div>
+
+    <script>
+      const LANES = ["CRIADO", "PAGO", "SEPARACAO", "ENVIADO", "EM_TRANSITO", "ENTREGUE"];
+      const LABELS = {
+        CRIADO: "Criado", PAGO: "Pago", SEPARACAO: "Separação",
+        ENVIADO: "Enviado", EM_TRANSITO: "Em trânsito", ENTREGUE: "Entregue",
+      };
+      const state = { pedidos: {}, alertas: [], hubs: {}, kpis: null, live: null };
+      let payChart, hubChart;
+
+      function brl(c) {
+        return (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      }
+
+      function setLive(ok) {
+        document.getElementById("liveDot").className = "dot-live" + (ok ? "" : " off");
+        document.getElementById("liveText").textContent = ok ? "Stream ao vivo" : "Reconectando…";
+      }
+
+      function renderKpis() {
+        const k = state.kpis;
+        if (!k) return;
+        document.getElementById("k-gmv").textContent = brl(k.gmv_centavos);
+        document.getElementById("k-ppm").textContent = Number(k.pedidos_por_minuto).toFixed(0);
+        document.getElementById("k-ticket").textContent = brl(k.ticket_medio_centavos);
+        document.getElementById("k-pix").textContent = k.percentual_pix + "%";
+        document.getElementById("k-live").textContent = k.percentual_live + "%";
+        document.getElementById("k-crit").textContent = k.alertas_criticos_abertos;
+        if (payChart) {
+          payChart.data.datasets[0].data = [k.percentual_pix, 100 - k.percentual_pix];
+          payChart.update("none");
+        }
+      }
+
+      function renderKanban() {
+        const list = Object.values(state.pedidos);
+        const root = document.getElementById("kanban");
+        root.innerHTML = LANES.map((lane) => {
+          const items = list.filter((p) => p.status === lane).slice(0, 5);
+          return `<div class="lane"><h3><span>${LABELS[lane]}</span><em>${items.length}</em></h3>${
+            items.map((p) => `<div class="card"><b>${brl(p.total_centavos)}</b><small>${p.pagamento_metodo} · ${p.origem} · ${p.frete.uf_destino}</small></div>`).join("")
+            || `<small style="color:var(--soft)">Vazio</small>`
+          }</div>`;
+        }).join("");
+      }
+
+      function renderAlerts() {
+        const ul = document.getElementById("alerts");
+        if (!state.alertas.length) {
+          ul.innerHTML = `<li class="INFO"><strong>Sem alertas</strong><p>Aguardando stream…</p></li>`;
+          return;
+        }
+        ul.innerHTML = state.alertas.slice(0, 12).map((a) =>
+          `<li class="${a.severidade}"><strong>${a.tipo.replaceAll("_", " ")} · ${a.destino}</strong><p>${a.mensagem}</p></li>`
+        ).join("");
+      }
+
+      function renderLive() {
+        const box = document.getElementById("liveBox");
+        if (!state.live) {
+          box.textContent = "Nenhuma live ativa no momento";
+          return;
+        }
+        const L = state.live;
+        box.innerHTML = `<strong style="font-family:Fraunces,serif;display:block;color:var(--ink)">${L.titulo}</strong>
+          <span>${L.espectadores.toLocaleString("pt-BR")} espectadores · UF ${L.vendedor_uf} · ${L.pedidos_na_live} pedidos</span>`;
+      }
+
+      function renderHubs() {
+        const hubs = Object.values(state.hubs);
+        if (!hubChart || !hubs.length) return;
+        hubChart.data.labels = hubs.map((h) => h.uf);
+        hubChart.data.datasets[0].data = hubs.map((h) => Math.round((h.carga_atual / h.capacidade) * 100));
+        hubChart.data.datasets[0].backgroundColor = hubs.map((h) => (h.saturado ? "#b42318" : "#009b3a"));
+        hubChart.update("none");
+      }
+
+      function apply(msg) {
+        const { event, payload } = msg;
+        if (event === "kpis.updated") { state.kpis = payload; renderKpis(); }
+        else if (event === "pedido.created") { state.pedidos[payload.id] = payload; renderKanban(); }
+        else if (event === "pedido.status_changed") {
+          if (state.pedidos[payload.id]) state.pedidos[payload.id].status = payload.status;
+          renderKanban();
+        }
+        else if (event === "alerta.routed") {
+          state.alertas.unshift(payload);
+          state.alertas = state.alertas.slice(0, 40);
+          renderAlerts();
+        }
+        else if (event === "hub.updated") { state.hubs[payload.id] = payload; renderHubs(); }
+        else if (event === "live.updated") { state.live = payload; renderLive(); }
+      }
+
+      function connect() {
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${proto}://${location.host}/ws`);
+        ws.onopen = () => {
+          setLive(true);
+          ws.send(JSON.stringify({ event: "client.subscribe", channels: ["pedidos", "alertas", "kpis", "hubs", "lives"] }));
+        };
+        ws.onclose = () => { setLive(false); setTimeout(connect, 2500); };
+        ws.onmessage = (ev) => apply(JSON.parse(ev.data));
+      }
+
+      payChart = new Chart(document.getElementById("payChart"), {
+        type: "doughnut",
+        data: { labels: ["PIX", "Outros"], datasets: [{ data: [0, 100], backgroundColor: ["#009b3a", "#002776"], borderWidth: 0 }] },
+        options: { cutout: "62%", plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } } } },
+      });
+      hubChart = new Chart(document.getElementById("hubChart"), {
+        type: "bar",
+        data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { max: 100, ticks: { callback: (v) => v + "%" } } },
+        },
+      });
+
+      renderKanban();
+      renderAlerts();
+      connect();
+      fetch("/api/v1/kpis").then((r) => r.json()).then((k) => { state.kpis = k; renderKpis(); }).catch(() => {});
+    </script>
+  </body>
+</html>

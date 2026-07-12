@@ -14,8 +14,10 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse
-from starlette.routing import Route, WebSocketRoute
+from starlette.responses import FileResponse, JSONResponse
+from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.staticfiles import StaticFiles
+from pathlib import Path
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 TZ = ZoneInfo("America/Sao_Paulo")
@@ -280,7 +282,27 @@ async def stop_embedded() -> None:
 # --- HTTP ---
 
 
-async def root(_: Request) -> JSONResponse:
+PUBLIC_DIR = Path(__file__).resolve().parent / "public"
+
+
+async def root(_: Request) -> FileResponse:
+    index = PUBLIC_DIR / "index.html"
+    if index.exists():
+        return FileResponse(index, media_type="text/html; charset=utf-8")
+    return JSONResponse(
+        {
+            "service": "Ops Stream API",
+            "status": "online",
+            "docs": {
+                "health": "/health",
+                "kpis": "/api/v1/kpis",
+                "websocket": "/ws",
+            },
+        }
+    )
+
+
+async def api_info(_: Request) -> JSONResponse:
     return JSONResponse(
         {
             "service": "Ops Stream API",
@@ -292,8 +314,8 @@ async def root(_: Request) -> JSONResponse:
                 "alertas": "/api/v1/alertas",
                 "hubs": "/api/v1/hubs",
                 "websocket": "/ws",
+                "dashboard": "/",
             },
-            "dashboard": "Rode o frontend localmente (npm run dev) ou publique o Static Site apontando para esta API.",
             "pipeline_mode": store.pipeline_mode,
         }
     )
@@ -479,6 +501,7 @@ async def on_startup() -> None:
 
 routes = [
     Route("/", root),
+    Route("/api", api_info),
     Route("/health", health),
     Route("/api/v1/pedidos", list_pedidos, methods=["GET"]),
     Route("/api/v1/pedidos", create_pedido, methods=["POST"]),
@@ -491,6 +514,10 @@ routes = [
     Route("/api/v1/simulator/stop", simulator_stop, methods=["POST"]),
     WebSocketRoute("/ws", ws_endpoint),
 ]
+
+if PUBLIC_DIR.exists():
+    routes.append(Mount("/assets", app=StaticFiles(directory=str(PUBLIC_DIR)), name="assets"))
+
 
 middleware = [
     Middleware(
