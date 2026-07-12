@@ -280,6 +280,25 @@ async def stop_embedded() -> None:
 # --- HTTP ---
 
 
+async def root(_: Request) -> JSONResponse:
+    return JSONResponse(
+        {
+            "service": "Ops Stream API",
+            "status": "online",
+            "docs": {
+                "health": "/health",
+                "kpis": "/api/v1/kpis",
+                "pedidos": "/api/v1/pedidos",
+                "alertas": "/api/v1/alertas",
+                "hubs": "/api/v1/hubs",
+                "websocket": "/ws",
+            },
+            "dashboard": "Rode o frontend localmente (npm run dev) ou publique o Static Site apontando para esta API.",
+            "pipeline_mode": store.pipeline_mode,
+        }
+    )
+
+
 async def health(_: Request) -> JSONResponse:
     return JSONResponse(
         {
@@ -459,6 +478,7 @@ async def on_startup() -> None:
 
 
 routes = [
+    Route("/", root),
     Route("/health", health),
     Route("/api/v1/pedidos", list_pedidos, methods=["GET"]),
     Route("/api/v1/pedidos", create_pedido, methods=["POST"]),
