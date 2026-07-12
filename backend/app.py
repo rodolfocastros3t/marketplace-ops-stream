@@ -482,6 +482,8 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         await websocket.send_json(envelope("hub.updated", hub))
     if store.current_live:
         await websocket.send_json(envelope("live.updated", store.current_live))
+    for alerta in reversed(store.alertas[:20]):
+        await websocket.send_json(envelope("alerta.routed", alerta))
     for pedido in list(store.pedidos.values())[-30:]:
         await websocket.send_json(envelope("pedido.created", pedido))
     try:
