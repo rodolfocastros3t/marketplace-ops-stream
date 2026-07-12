@@ -283,11 +283,19 @@ async def stop_embedded() -> None:
 
 
 PUBLIC_DIR = Path(__file__).resolve().parent / "public"
+STATIC_DIR = Path(__file__).resolve().parent / "static"  # React build (dist)
 
 
-async def root(_: Request) -> FileResponse:
-    index = PUBLIC_DIR / "index.html"
-    if index.exists():
+def _dashboard_index() -> Path | None:
+    for candidate in (STATIC_DIR / "index.html", PUBLIC_DIR / "index.html"):
+        if candidate.exists():
+            return candidate
+    return None
+
+
+async def root(_: Request) -> FileResponse | JSONResponse:
+    index = _dashboard_index()
+    if index is not None:
         return FileResponse(index, media_type="text/html; charset=utf-8")
     return JSONResponse(
         {
@@ -515,8 +523,12 @@ routes = [
     WebSocketRoute("/ws", ws_endpoint),
 ]
 
-if PUBLIC_DIR.exists():
-    routes.append(Mount("/assets", app=StaticFiles(directory=str(PUBLIC_DIR)), name="assets"))
+# Prefer React build (Docker/production); fallback HTML em public/
+_react_assets = STATIC_DIR / "assets"
+if _react_assets.exists():
+    routes.append(Mount("/assets", app=StaticFiles(directory=str(_react_assets)), name="react-assets"))
+elif PUBLIC_DIR.exists():
+    routes.append(Mount("/public", app=StaticFiles(directory=str(PUBLIC_DIR)), name="public-assets"))
 
 
 middleware = [

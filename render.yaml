@@ -1,5 +1,5 @@
-# Blueprint Ops Stream — Free tier (Hobby)
-# Docs: https://render.com/docs/blueprint-spec
+# Blueprint Ops Stream — Free tier
+# Serve o React build versionado em backend/static (mesmo UX do localhost:5173)
 
 services:
   - type: web

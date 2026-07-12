@@ -53,7 +53,7 @@ Painel **Ops Stream** (React + Tailwind) consumindo WebSocket:
 | Tempo real | WebSocket `/ws` | Empurra eventos ao dashboard |
 | Frontend | **React 18**, Chart.js, **Tailwind CSS v4**, Vite | UX operacional BR |
 | Infra local | Docker Compose | Redpanda + Spark + producer + API |
-| Deploy alvo | Render / GitHub | API containerizada |
+| Deploy alvo | Render (free) | Mesmo React do local, via `backend/static` |
 
 ### Arquitetura
 
@@ -187,6 +187,21 @@ marketplace-streaming/
 6. WhatsApp commerce (evolução)  
 7. LGPD by design (evolução)  
 8. Cashback PIX (evolução)  
+
+---
+
+## Deploy (Render)
+
+A URL do serviço serve o **mesmo dashboard React** do `localhost:5173` (build em `backend/static`).
+
+Após alterar o frontend:
+
+```bash
+./scripts/build-dashboard.sh
+git add backend/static && git commit && git push
+```
+
+Blueprint: [`render.yaml`](./render.yaml) (plano free, `PIPELINE_MODE=embedded`).
 
 ---
 
