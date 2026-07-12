@@ -1,10 +1,17 @@
+# Blueprint Ops Stream — Free tier (Hobby)
+# Docs: https://render.com/docs/blueprint-spec
+
 services:
   - type: web
-    name: vitrine-api
+    name: ops-stream-api
     runtime: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"
+      - key: PIPELINE_MODE
+        value: embedded
