@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitrine.local/schemas/hub_updated.schema.json",
+  "title": "HubUpdated",
+  "type": "object",
+  "required": ["event", "ts", "payload"],
+  "properties": {
+    "event": { "const": "hub.updated" },
+    "ts": { "type": "string", "format": "date-time" },
+    "payload": {
+      "type": "object",
+      "required": ["id", "nome", "uf", "cidade", "lat", "lng", "carga_atual", "capacidade"],
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "uf": { "type": "string", "minLength": 2, "maxLength": 2 },
+        "cidade": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "carga_atual": { "type": "integer", "minimum": 0 },
+        "capacidade": { "type": "integer", "minimum": 1 },
+        "saturado": { "type": "boolean" }
+      }
+    }
+  }
+}

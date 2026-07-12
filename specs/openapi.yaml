@@ -1,0 +1,476 @@
+openapi: 3.1.0
+info:
+  title: Ops Stream Marketplace Streaming API
+  version: 1.0.0
+  description: |
+    Contratos REST do MVP. Comandos e consultas.
+    Eventos em tempo real estão em `asyncapi.yaml`.
+  contact:
+    name: Hackathon Unifametro — Ops Stream
+servers:
+  - url: http://localhost:8000
+    description: Local
+  - url: https://opsstream-api.onrender.com
+    description: Render (produção)
+
+tags:
+  - name: health
+  - name: stream
+  - name: pedidos
+  - name: kpis
+  - name: alertas
+  - name: hubs
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Healthcheck
+      operationId: getHealth
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /api/v1/pedidos:
+    get:
+      tags: [pedidos]
+      summary: Lista pedidos do Kanban
+      operationId: listPedidos
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/PedidoStatus"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        "200":
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Pedido"
+                  total:
+                    type: integer
+
+    post:
+      tags: [pedidos]
+      summary: Injeta pedido (simulador / testes)
+      operationId: createPedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PedidoCreate"
+      responses:
+        "201":
+          description: Criado e enfileirado no stream
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pedido"
+        "422":
+          description: Violação de contrato de domínio
+
+  /api/v1/pedidos/{pedido_id}/status:
+    patch:
+      tags: [pedidos]
+      summary: Atualiza status (transição de ciclo de vida)
+      operationId: patchPedidoStatus
+      parameters:
+        - $ref: "#/components/parameters/PedidoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: "#/components/schemas/PedidoStatus"
+      responses:
+        "200":
+          description: Status atualizado e emitido no WebSocket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pedido"
+        "409":
+          description: Transição inválida
+
+  /api/v1/kpis:
+    get:
+      tags: [kpis]
+      summary: Snapshot dos KPIs
+      operationId: getKpis
+      responses:
+        "200":
+          description: KPIs atuais
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Kpis"
+
+  /api/v1/alertas:
+    get:
+      tags: [alertas]
+      summary: Alertas ativos
+      operationId: listAlertas
+      parameters:
+        - name: severidade
+          in: query
+          schema:
+            $ref: "#/components/schemas/Severidade"
+        - name: destino
+          in: query
+          schema:
+            $ref: "#/components/schemas/DestinoAlerta"
+      responses:
+        "200":
+          description: Lista de alertas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Alerta"
+
+  /api/v1/alertas:
+    post:
+      tags: [alertas]
+      summary: Publica alerta (aplica roteamento automático)
+      operationId: createAlerta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertaCreate"
+      responses:
+        "201":
+          description: Alerta roteado e transmitido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alerta"
+
+  /api/v1/hubs:
+    get:
+      tags: [hubs]
+      summary: Hubs logísticos para o mapa
+      operationId: listHubs
+      responses:
+        "200":
+          description: Hubs
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/HubLogistico"
+
+  /api/v1/simulator/start:
+    post:
+      tags: [stream]
+      summary: Inicia produtor de eventos (1.5s)
+      operationId: startSimulator
+      responses:
+        "200":
+          description: Simulador ativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  running:
+                    type: boolean
+                  interval_seconds:
+                    type: number
+                    example: 1.5
+
+  /api/v1/simulator/stop:
+    post:
+      tags: [stream]
+      summary: Para o produtor
+      operationId: stopSimulator
+      responses:
+        "200":
+          description: Simulador parado
+
+components:
+  parameters:
+    PedidoId:
+      name: pedido_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        websocket_clients:
+          type: integer
+        simulator_running:
+          type: boolean
+
+    PedidoStatus:
+      type: string
+      enum:
+        - CRIADO
+        - PAGO
+        - SEPARACAO
+        - ENVIADO
+        - EM_TRANSITO
+        - ENTREGUE
+        - CANCELADO
+        - DEVOLUCAO
+
+    PagamentoMetodo:
+      type: string
+      enum: [PIX, BOLETO, CARTAO_CREDITO, CARTAO_DEBITO]
+
+    Severidade:
+      type: string
+      enum: [INFO, ATENCAO, CRITICO]
+
+    DestinoAlerta:
+      type: string
+      enum: [OPERACOES, FRAUDE, MARKETING, LOGISTICA, ATENDIMENTO]
+
+    Uf:
+      type: string
+      minLength: 2
+      maxLength: 2
+      description: Sigla de UF brasileira (AC…TO)
+
+    ItemPedido:
+      type: object
+      required: [sku, titulo, quantidade, preco_centavos]
+      properties:
+        sku:
+          type: string
+        titulo:
+          type: string
+        quantidade:
+          type: integer
+          minimum: 1
+        preco_centavos:
+          type: integer
+          minimum: 1
+
+    Frete:
+      type: object
+      required: [cep_destino, uf_destino, valor_centavos, prazo_dias]
+      properties:
+        cep_destino:
+          type: string
+          pattern: "^\\d{5}-?\\d{3}$"
+        uf_destino:
+          type: string
+          minLength: 2
+          maxLength: 2
+        valor_centavos:
+          type: integer
+          minimum: 0
+        prazo_dias:
+          type: integer
+          minimum: 0
+        transportadora:
+          type: string
+
+    Pedido:
+      type: object
+      required:
+        - id
+        - comprador_id
+        - itens
+        - status
+        - pagamento_metodo
+        - frete
+        - total_centavos
+        - origem
+        - criado_em
+      properties:
+        id:
+          type: string
+          format: uuid
+        comprador_id:
+          type: string
+        itens:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ItemPedido"
+        status:
+          $ref: "#/components/schemas/PedidoStatus"
+        pagamento_metodo:
+          $ref: "#/components/schemas/PagamentoMetodo"
+        frete:
+          $ref: "#/components/schemas/Frete"
+        total_centavos:
+          type: integer
+          minimum: 1
+        origem:
+          type: string
+          enum: [CATALOGO, LIVE, FLASH_SALE, WHATSAPP]
+        criado_em:
+          type: string
+          format: date-time
+        atualizado_em:
+          type: string
+          format: date-time
+
+    PedidoCreate:
+      type: object
+      required: [comprador_id, itens, pagamento_metodo, frete, origem]
+      properties:
+        comprador_id:
+          type: string
+        itens:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ItemPedido"
+        pagamento_metodo:
+          $ref: "#/components/schemas/PagamentoMetodo"
+        frete:
+          $ref: "#/components/schemas/Frete"
+        origem:
+          type: string
+          enum: [CATALOGO, LIVE, FLASH_SALE, WHATSAPP]
+
+    Alerta:
+      type: object
+      required: [id, severidade, tipo, mensagem, destino, criado_em]
+      properties:
+        id:
+          type: string
+          format: uuid
+        severidade:
+          $ref: "#/components/schemas/Severidade"
+        tipo:
+          type: string
+          enum:
+            - ESTOQUE_CRITICO
+            - ATRASO_ENTREGA
+            - FRAUDE_SUSPEITA
+            - LIVE_HOT
+            - FLASH_SALE
+            - HUB_SATURADO
+            - PIX_FALHOU
+            - CAMPANHA_REGIONAL
+        mensagem:
+          type: string
+        destino:
+          $ref: "#/components/schemas/DestinoAlerta"
+        criado_em:
+          type: string
+          format: date-time
+        contexto:
+          type: object
+          additionalProperties: true
+
+    AlertaCreate:
+      type: object
+      required: [severidade, tipo, mensagem]
+      properties:
+        severidade:
+          $ref: "#/components/schemas/Severidade"
+        tipo:
+          type: string
+        mensagem:
+          type: string
+        contexto:
+          type: object
+          additionalProperties: true
+
+    HubLogistico:
+      type: object
+      required: [id, nome, uf, cidade, lat, lng, carga_atual, capacidade]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        uf:
+          type: string
+        cidade:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        carga_atual:
+          type: integer
+          minimum: 0
+        capacidade:
+          type: integer
+          minimum: 1
+
+    Kpis:
+      type: object
+      required:
+        - gmv_centavos
+        - pedidos_por_minuto
+        - ticket_medio_centavos
+        - percentual_pix
+        - percentual_live
+        - alertas_criticos_abertos
+        - hubs_saturados
+        - espectadores_live_total
+        - atualizado_em
+      properties:
+        gmv_centavos:
+          type: integer
+        pedidos_por_minuto:
+          type: number
+        ticket_medio_centavos:
+          type: integer
+        percentual_pix:
+          type: number
+          minimum: 0
+          maximum: 100
+        percentual_live:
+          type: number
+          minimum: 0
+          maximum: 100
+        alertas_criticos_abertos:
+          type: integer
+        hubs_saturados:
+          type: integer
+        espectadores_live_total:
+          type: integer
+        atualizado_em:
+          type: string
+          format: date-time

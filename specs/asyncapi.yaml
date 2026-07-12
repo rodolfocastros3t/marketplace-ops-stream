@@ -1,0 +1,179 @@
+asyncapi: 3.0.0
+info:
+  title: Ops Stream Marketplace Stream
+  version: 1.0.0
+  description: |
+    Canal WebSocket bidirecional — espelho do laboratório Colab
+    (produtor → Starlette → WebSocket → dashboard).
+
+    Endpoint: `WS /ws`
+
+    Envelope comum de toda mensagem:
+    ```json
+    {
+      "event": "pedido.created",
+      "ts": "2026-07-12T14:00:00-03:00",
+      "payload": {}
+    }
+    ```
+
+servers:
+  local:
+    host: localhost:8000
+    pathname: /ws
+    protocol: ws
+  render:
+    host: vitrine-api.onrender.com
+    pathname: /ws
+    protocol: wss
+
+channels:
+  marketplace:
+    address: /ws
+    messages:
+      PedidoCreated:
+        $ref: "#/components/messages/PedidoCreated"
+      PedidoStatusChanged:
+        $ref: "#/components/messages/PedidoStatusChanged"
+      AlertaRouted:
+        $ref: "#/components/messages/AlertaRouted"
+      KpisUpdated:
+        $ref: "#/components/messages/KpisUpdated"
+      HubUpdated:
+        $ref: "#/components/messages/HubUpdated"
+      LiveUpdated:
+        $ref: "#/components/messages/LiveUpdated"
+      ClientSubscribe:
+        $ref: "#/components/messages/ClientSubscribe"
+      ClientPing:
+        $ref: "#/components/messages/ClientPing"
+
+operations:
+  onPedidoCreated:
+    action: send
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/PedidoCreated"
+
+  onPedidoStatusChanged:
+    action: send
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/PedidoStatusChanged"
+
+  onAlertaRouted:
+    action: send
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/AlertaRouted"
+
+  onKpisUpdated:
+    action: send
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/KpisUpdated"
+
+  onHubUpdated:
+    action: send
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/HubUpdated"
+
+  onLiveUpdated:
+    action: send
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/LiveUpdated"
+
+  receiveClientMessages:
+    action: receive
+    channel:
+      $ref: "#/channels/marketplace"
+    messages:
+      - $ref: "#/channels/marketplace/messages/ClientSubscribe"
+      - $ref: "#/channels/marketplace/messages/ClientPing"
+
+components:
+  messages:
+    PedidoCreated:
+      name: pedido.created
+      contentType: application/json
+      payload:
+        $ref: "./events/envelope.schema.json"
+      examples:
+        - name: pix_live
+          payload:
+            event: pedido.created
+            ts: "2026-07-12T14:00:01-03:00"
+            payload:
+              id: "11111111-1111-1111-1111-111111111111"
+              status: CRIADO
+              pagamento_metodo: PIX
+              origem: LIVE
+              total_centavos: 15990
+              frete:
+                cep_destino: "60115-222"
+                uf_destino: CE
+                valor_centavos: 1290
+                prazo_dias: 3
+
+    PedidoStatusChanged:
+      name: pedido.status_changed
+      contentType: application/json
+      payload:
+        $ref: "./events/pedido_status_changed.schema.json"
+
+    AlertaRouted:
+      name: alerta.routed
+      contentType: application/json
+      payload:
+        $ref: "./events/alerta_routed.schema.json"
+
+    KpisUpdated:
+      name: kpis.updated
+      contentType: application/json
+      payload:
+        $ref: "./events/kpis_updated.schema.json"
+
+    HubUpdated:
+      name: hub.updated
+      contentType: application/json
+      payload:
+        $ref: "./events/hub_updated.schema.json"
+
+    LiveUpdated:
+      name: live.updated
+      contentType: application/json
+      payload:
+        $ref: "./events/live_updated.schema.json"
+
+    ClientSubscribe:
+      name: client.subscribe
+      contentType: application/json
+      payload:
+        type: object
+        required: [event, channels]
+        properties:
+          event:
+            const: client.subscribe
+          channels:
+            type: array
+            items:
+              type: string
+              enum: [pedidos, alertas, kpis, hubs, lives]
+
+    ClientPing:
+      name: client.ping
+      contentType: application/json
+      payload:
+        type: object
+        required: [event]
+        properties:
+          event:
+            const: client.ping

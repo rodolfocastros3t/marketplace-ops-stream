@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitrine.local/schemas/alerta_routed.schema.json",
+  "title": "AlertaRouted",
+  "type": "object",
+  "required": ["event", "ts", "payload"],
+  "properties": {
+    "event": { "const": "alerta.routed" },
+    "ts": { "type": "string", "format": "date-time" },
+    "payload": {
+      "type": "object",
+      "required": ["id", "severidade", "tipo", "mensagem", "destino"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "severidade": { "type": "string", "enum": ["INFO", "ATENCAO", "CRITICO"] },
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "ESTOQUE_CRITICO",
+            "ATRASO_ENTREGA",
+            "FRAUDE_SUSPEITA",
+            "LIVE_HOT",
+            "FLASH_SALE",
+            "HUB_SATURADO",
+            "PIX_FALHOU",
+            "CAMPANHA_REGIONAL"
+          ]
+        },
+        "mensagem": { "type": "string" },
+        "destino": {
+          "type": "string",
+          "enum": ["OPERACOES", "FRAUDE", "MARKETING", "LOGISTICA", "ATENDIMENTO"]
+        },
+        "contexto": { "type": "object" }
+      }
+    }
+  }
+}

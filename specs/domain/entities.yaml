@@ -1,0 +1,119 @@
+# Contratos de domínio — Vitrine (Brasil)
+# Invariantes devem ser respeitados por API, eventos e UI.
+
+currency: BRL
+locale: pt-BR
+timezone: America/Sao_Paulo
+
+entities:
+
+  Comprador:
+    required: [id, nome, email, cpf, cep]
+    rules:
+      - cpf deve ser válido (algoritmo BR)
+      - cep formato 8 dígitos (com ou sem hífen)
+      - consentimento_lgpd obrigatório para marketing
+    notes: LGPD — dados sensíveis nunca no stream público
+
+  Vendedor:
+    required: [id, razao_social, documento, uf, tipo]
+    enums:
+      tipo: [MEI, LTDA, SA, PF]
+      documento: [CNPJ, CPF]
+    rules:
+      - MEI limitado a categorias permitidas
+      - uf determina frete regional e campanhas locais
+
+  Produto:
+    required: [id, sku, titulo, preco_centavos, estoque, vendedor_id, categoria]
+    rules:
+      - preco_centavos > 0
+      - estoque >= 0
+      - titulo em pt-BR
+    attributes_br:
+      - ncm  # classificação fiscal
+      - origem  # nacional / importado
+
+  Pedido:
+    required: [id, comprador_id, itens, status, pagamento, frete, criado_em]
+    enums:
+      status:
+        - CRIADO
+        - PAGO
+        - SEPARACAO
+        - ENVIADO
+        - EM_TRANSITO
+        - ENTREGUE
+        - CANCELADO
+        - DEVOLUCAO
+      pagamento_metodo: [PIX, BOLETO, CARTAO_CREDITO, CARTAO_DEBITO]
+    rules:
+      - transição de status só na ordem do ciclo de vida
+      - PIX confirmação esperada < 60s no stream
+      - frete.cep_destino obrigatório
+
+  LiveSession:
+    required: [id, vendedor_id, titulo, status, espectadores]
+    enums:
+      status: [AGENDADA, AO_VIVO, ENCERRADA]
+    rules:
+      - compra_live gera Pedido com origem=LIVE
+      - espectadores >= 0
+
+  HubLogistico:
+    required: [id, nome, uf, cidade, lat, lng, carga_atual]
+    enums:
+      uf: [AC,AL,AP,AM,BA,CE,DF,ES,GO,MA,MT,MS,MG,PA,PB,PR,PE,PI,RJ,RN,RS,RO,RR,SC,SP,SE,TO]
+    rules:
+      - carga_atual usada para mapa dinâmico e alertas de saturação
+
+  Alerta:
+    required: [id, severidade, tipo, mensagem, criado_em, destino]
+    enums:
+      severidade: [INFO, ATENCAO, CRITICO]
+      tipo:
+        - ESTOQUE_CRITICO
+        - ATRASO_ENTREGA
+        - FRAUDE_SUSPEITA
+        - LIVE_HOT
+        - FLASH_SALE
+        - HUB_SATURADO
+        - PIX_FALHOU
+        - CAMPANHA_REGIONAL
+      destino:
+        - OPERACOES
+        - FRAUDE
+        - MARKETING
+        - LOGISTICA
+        - ATENDIMENTO
+
+# Roteamento automático (espelha regras do Colab hospitalar)
+routing_rules:
+  - when: tipo in [FRAUDE_SUSPEITA, PIX_FALHOU] and severidade == CRITICO
+    route_to: FRAUDE
+  - when: tipo in [ATRASO_ENTREGA, HUB_SATURADO]
+    route_to: LOGISTICA
+  - when: tipo in [LIVE_HOT, FLASH_SALE, CAMPANHA_REGIONAL]
+    route_to: MARKETING
+  - when: tipo == ESTOQUE_CRITICO
+    route_to: OPERACOES
+  - default: OPERACOES
+
+kanban_lanes:
+  - CRIADO
+  - PAGO
+  - SEPARACAO
+  - ENVIADO
+  - EM_TRANSITO
+  - ENTREGUE
+  # CANCELADO e DEVOLUCAO em painel lateral de exceções
+
+kpis:
+  - gmv_centavos          # Gross Merchandise Value
+  - pedidos_por_minuto
+  - ticket_medio_centavos
+  - percentual_pix
+  - percentual_live
+  - alertas_criticos_abertos
+  - hubs_saturados
+  - espectadores_live_total

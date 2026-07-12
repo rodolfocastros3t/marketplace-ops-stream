@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitrine.local/schemas/kpis_updated.schema.json",
+  "title": "KpisUpdated",
+  "type": "object",
+  "required": ["event", "ts", "payload"],
+  "properties": {
+    "event": { "const": "kpis.updated" },
+    "ts": { "type": "string", "format": "date-time" },
+    "payload": {
+      "type": "object",
+      "required": [
+        "gmv_centavos",
+        "pedidos_por_minuto",
+        "ticket_medio_centavos",
+        "percentual_pix",
+        "percentual_live",
+        "alertas_criticos_abertos",
+        "hubs_saturados",
+        "espectadores_live_total"
+      ],
+      "properties": {
+        "gmv_centavos": { "type": "integer", "minimum": 0 },
+        "pedidos_por_minuto": { "type": "number", "minimum": 0 },
+        "ticket_medio_centavos": { "type": "integer", "minimum": 0 },
+        "percentual_pix": { "type": "number", "minimum": 0, "maximum": 100 },
+        "percentual_live": { "type": "number", "minimum": 0, "maximum": 100 },
+        "alertas_criticos_abertos": { "type": "integer", "minimum": 0 },
+        "hubs_saturados": { "type": "integer", "minimum": 0 },
+        "espectadores_live_total": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

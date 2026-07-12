@@ -1,0 +1,45 @@
+# Dependências e ambientes
+.venv/
+backend/.venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+yarn-error.log*
+
+# Spark / streaming
+spark-checkpoint/
+**/checkpoint/
+/tmp/vitrine-spark-checkpoint/
+
+# Segredos e ambiente
+.env
+.env.*
+!.env.example
+
+# IDE / SO
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs e builds
+*.log
+dist/
+build/
+.coverage
+htmlcov/
+
+# Artefatos locais / capturas (não versionar)
+*.png
+*.jpg
+*.jpeg
+Captura*.png
+.cursor/

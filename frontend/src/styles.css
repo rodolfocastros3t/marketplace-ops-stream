@@ -1,0 +1,122 @@
+@import "tailwindcss";
+@source "../index.html";
+@source "**/*.{js,jsx,ts,tsx}";
+
+/* Paleta Brasil — contraste alto, leitura primeiro */
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+
+  /* Texto */
+  --color-ink: #0a1f14;
+  --color-soft: #3a5548;
+
+  /* Superfícies */
+  --color-panel: rgb(255 255 255 / 0.92);
+  --color-line: rgb(0 39 118 / 0.14);
+  --color-cream: #f3faf5;
+  --color-mist: #e7f3eb;
+  --color-sand: #ebe6d4;
+
+  /* Bandeira (uso funcional) */
+  --color-brand: #009b3a; /* verde — sucesso / PIX / ok */
+  --color-pine: #006b2e; /* verde escuro — CTAs */
+  --color-gold: #e6b800; /* amarelo ouro — destaque (nunca texto fino) */
+  --color-sky: #002776; /* azul — stream / info */
+
+  /* Semântica UX (não bandeira, mas leitura) */
+  --color-clay: #b42318; /* crítico / saturado */
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    /* Atmosfera BR: verde mata + céu azul + sol ouro */
+    background:
+      radial-gradient(ellipse 70% 45% at 8% -5%, rgb(0 155 58 / 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 40% at 100% 0%, rgb(0 39 118 / 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 35% at 70% 100%, rgb(230 184 0 / 0.14) 0%, transparent 55%),
+      linear-gradient(165deg, #f5fbf7 0%, #eef4f8 48%, #f7f5ea 100%);
+  }
+
+  ::selection {
+    background: rgb(0 155 58 / 0.22);
+    color: var(--color-ink);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .brasil-rail {
+    display: block;
+    height: 3px;
+    width: 9.5rem;
+    margin-top: 0.7rem;
+    background: linear-gradient(
+      90deg,
+      #009b3a 0% 34%,
+      #e6b800 34% 66%,
+      #002776 66% 100%
+    );
+  }
+
+  .animate-rise {
+    animation: rise 0.65s ease both;
+  }
+
+  .animate-pop {
+    animation: pop 0.35s ease both;
+  }
+
+  .animate-pulse-hub {
+    animation: pulse-hub 2.4s ease-in-out infinite;
+  }
+
+  .animate-pulse-hot {
+    animation: pulse-hub 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse-hub {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(0 155 58 / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgb(0 155 58 / 0);
+  }
+}

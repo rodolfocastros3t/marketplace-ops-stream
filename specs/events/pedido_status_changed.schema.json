@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitrine.local/schemas/pedido_status_changed.schema.json",
+  "title": "PedidoStatusChanged",
+  "type": "object",
+  "required": ["event", "ts", "payload"],
+  "properties": {
+    "event": { "const": "pedido.status_changed" },
+    "ts": { "type": "string", "format": "date-time" },
+    "payload": {
+      "type": "object",
+      "required": ["id", "status_anterior", "status", "origem"],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "status_anterior": {
+          "type": "string",
+          "enum": ["CRIADO", "PAGO", "SEPARACAO", "ENVIADO", "EM_TRANSITO", "ENTREGUE", "CANCELADO", "DEVOLUCAO"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["CRIADO", "PAGO", "SEPARACAO", "ENVIADO", "EM_TRANSITO", "ENTREGUE", "CANCELADO", "DEVOLUCAO"]
+        },
+        "origem": {
+          "type": "string",
+          "enum": ["CATALOGO", "LIVE", "FLASH_SALE", "WHATSAPP"]
+        },
+        "uf_destino": { "type": "string", "minLength": 2, "maxLength": 2 }
+      }
+    }
+  }
+}
